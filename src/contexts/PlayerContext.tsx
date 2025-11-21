@@ -30,6 +30,7 @@ export function PlayerProvider({ session, children }: PlayerProviderProps) {
       nickname: "",
       timer: undefined,
       dice: { share: false, rolls: [] },
+      diceRolls: [],       // <-- ADICIONADO: evita TS2345
       sessionId: undefined,
       userId,
     },
@@ -114,7 +115,7 @@ export function PlayerProvider({ session, children }: PlayerProviderProps) {
       session.socket?.off("connect", handleSocketConnect);
       session.socket?.io.off("reconnect", handleSocketConnect);
     };
-  });
+  }, [session, setPlayerState]); // <-- dependências adicionadas
 
   return (
     <PlayerStateContext.Provider value={playerState}>

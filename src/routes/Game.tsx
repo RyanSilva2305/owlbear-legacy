@@ -1,3 +1,5 @@
+// Arquivo: owlbear-rodeo-legacy/src/routes/Game.tsx
+
 import { useState, useEffect, useRef } from "react";
 import { Flex, Box, Text } from "theme-ui";
 import { useParams } from "react-router-dom";
@@ -34,7 +36,7 @@ import Session, { PeerErrorEvent, SessionStatus } from "../network/Session";
 function Game() {
   const { id: gameId }: { id: string } = useParams();
   const { password } = useAuth();
-  const { databaseStatus } = useDatabase();
+  const { databaseStatus, database } = useDatabase();
 
   const [session] = useState(new Session());
   const [sessionStatus, setSessionStatus] = useState<SessionStatus>();
@@ -42,6 +44,33 @@ function Game() {
   const [maintenance, setMaintenance] = useState(
     process.env.REACT_APP_MAINTENANCE === "true"
   );
+
+  // ========== SOBRESCREVER NICKNAME DO LARAVEL ==========
+  useEffect(() => {
+    async function overrideNickname() {
+      if (database && databaseStatus === "loaded") {
+        try {
+          const laravelName = localStorage.getItem('owlbear_user_name');
+          
+          if (laravelName) {
+            console.log("🔄 Sobrescrevendo nickname no IndexedDB:", laravelName);
+            
+            await database.table("user").put({
+              key: "nickname",
+              value: laravelName
+            });
+            
+            console.log("✅ Nickname sobrescrito com sucesso!");
+          }
+        } catch (error) {
+          console.error("❌ Erro ao sobrescrever nickname:", error);
+        }
+      }
+    }
+
+    overrideNickname();
+  }, [database, databaseStatus]);
+  // ====================================================
 
   // Handle session errors
   const [peerError, setPeerError] = useState<string | null>(null);

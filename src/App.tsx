@@ -1,9 +1,12 @@
+// Arquivo: owlbear-rodeo-legacy/src/App.tsx
+
 import { ThemeProvider } from "theme-ui";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 
 import theme from "./theme";
 import Home from "./routes/Home";
 import Game from "./routes/Game";
+import LaravelGame from "./routes/LaravelGame"; // NOVO
 import About from "./routes/About";
 import FAQ from "./routes/FAQ";
 import ReleaseNotes from "./routes/ReleaseNotes";
@@ -38,6 +41,15 @@ function App() {
                   <Route path="/faq">
                     <FAQ />
                   </Route>
+                  {/* NOVA ROTA: Auto-start via Laravel */}
+                  <Route path="/laravel/:sessaoId">
+                    <DatabaseProvider>
+                      <UserIdProvider>
+                        <LaravelGame />
+                      </UserIdProvider>
+                    </DatabaseProvider>
+                  </Route>
+                  {/* Rota normal do jogo */}
                   <Route path="/game/:id">
                     <DatabaseProvider>
                       <UserIdProvider>
