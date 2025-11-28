@@ -3,7 +3,7 @@ import { Box } from "theme-ui";
 import ReactResizeDetector from "react-resize-detector";
 import { Stage, Layer, Image, Group } from "react-konva";
 import Konva from "konva";
-
+//MapInteraction.tsx
 import useMapImage from "../../hooks/useMapImage";
 import usePreventOverscroll from "../../hooks/usePreventOverscroll";
 import useStageInteraction from "../../hooks/useStageInteraction";
@@ -196,6 +196,7 @@ function MapInteraction({
             cursor: getCursorForTool(selectedToolId),
             touchAction: "none",
             outline: "none",
+            backgroundColor: "rgb(2, 32, 13)",
             width: "100%",
             height: "100%",
           }}

@@ -1,5 +1,5 @@
 import Vector2 from "../helpers/Vector2";
-
+//Grid.ts
 export type GridInset = {
   /** Top left position of the inset */
   topLeft: Vector2;

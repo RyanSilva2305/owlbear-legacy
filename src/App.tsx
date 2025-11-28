@@ -1,4 +1,4 @@
-// Arquivo: owlbear-rodeo-legacy/src/App.tsx
+// Arquivo: owlbear-legacy/src/App.tsx
 
 import { ThemeProvider } from "theme-ui";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";

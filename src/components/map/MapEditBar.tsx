@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Flex, Close, IconButton } from "theme-ui";
-
+//MapEditBar.tsx
 import { groupsFromIds, itemsFromGroups } from "../../helpers/group";
 
 import ConfirmModal from "../../modals/ConfirmModal";

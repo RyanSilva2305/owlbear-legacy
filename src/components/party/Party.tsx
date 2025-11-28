@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Flex, Box, Text } from "theme-ui";
 import SimpleBar from "simplebar-react";
-
+//party/Party.tsx (não tem nenhum outro party aq)
 import AddPartyMemberButton from "./AddPartyMemberButton";
 import Nickname from "./Nickname";
 import ChangeNicknameButton from "./ChangeNicknameButton";

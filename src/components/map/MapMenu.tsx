@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import Modal from "react-modal";
 import { useThemeUI } from "theme-ui";
 import CSS from "csstype";
-
+//MapMenu.tsx
 import { RequestCloseEventHandler } from "../../types/Events";
 import { useInteractionEmitter } from "../../contexts/MapInteractionContext";
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Box, Input, Flex, Text, IconButton } from "theme-ui";
 import Konva from "konva";
-
+//TokenMenu.tsx
 import MapMenu from "../map/MapMenu";
 
 import colors, { Color, colorOptions } from "../../helpers/colors";

@@ -4,7 +4,7 @@ import { Group, Line } from "react-konva";
 import useImage from "use-image";
 import Color from "color";
 import Konva from "konva";
-
+//FogTool.tsx
 import diagonalPattern from "../../images/DiagonalPattern.png";
 
 import {

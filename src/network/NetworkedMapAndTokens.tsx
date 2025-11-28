@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useToasts } from "react-toast-notifications";
-
+//NetworkedMapAndTokens.tsx
 import { useMapData } from "../contexts/MapDataContext";
 import { useMapLoading } from "../contexts/MapLoadingContext";
 import { useUserId } from "../contexts/UserIdContext";

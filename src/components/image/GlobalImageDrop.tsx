@@ -19,6 +19,7 @@ import { useMapData } from "../../contexts/MapDataContext";
 import { useTokenData } from "../../contexts/TokenDataContext";
 import { useAssets } from "../../contexts/AssetsContext";
 import { useMapStage } from "../../contexts/MapStageContext";
+import { usePermissoes } from "../../contexts/PermissoesContext";
 
 import useImageDrop, { ImageDropEvent } from "../../hooks/useImageDrop";
 
@@ -43,6 +44,7 @@ function GlobalImageDrop({
   const { addMap, getMapState } = useMapData();
   const { addToken } = useTokenData();
   const { addAssets } = useAssets();
+  const { canAddToken } = usePermissoes(); // ADICIONADO
 
   const mapStageRef = useMapStage();
 
@@ -55,8 +57,17 @@ function GlobalImageDrop({
   const [droppingType, setDroppingType] = useState<"maps" | "tokens">("maps");
 
   async function handleDrop({ files, dropPosition }: ImageDropEvent) {
+    // BLOQUEIO: Verificar permissões antes de processar
+    if (droppingType === "maps" && !canAddToken()) {
+      addToast("❌ Você não tem permissão para adicionar mapas");
+      return;
+    }
+    if (droppingType === "tokens" && !canAddToken()) {
+      addToast("❌ Você não tem permissão para adicionar tokens");
+      return;
+    }
+
     if (navigator.storage) {
-      // Attempt to enable persistant storage
       await navigator.storage.persist();
     }
 
@@ -71,7 +82,6 @@ function GlobalImageDrop({
       }
     }
 
-    // Any file greater than 20MB
     if (droppedImagesRef.current.some((file) => file.size > 2e7)) {
       setShowLargeImageWarning(true);
       return;
@@ -99,6 +109,12 @@ function GlobalImageDrop({
   }
 
   async function handleMaps() {
+    // BLOQUEIO: Verificar novamente antes de criar
+    if (!canAddToken()) {
+      addToast("❌ Você não tem permissão para adicionar mapas");
+      return;
+    }
+
     if (droppedImagesRef.current && userId) {
       setIsLoading(true);
       let maps = [];
@@ -109,7 +125,6 @@ function GlobalImageDrop({
         maps.push(map);
       }
 
-      // Change map if only 1 dropped
       if (maps.length === 1) {
         const mapState = await getMapState(maps[0].id);
         if (mapState) {
@@ -123,9 +138,14 @@ function GlobalImageDrop({
   }
 
   async function handleTokens() {
+    // BLOQUEIO: Verificar antes de criar tokens
+    if (!canAddToken()) {
+      addToast("❌ Você não tem permissão para adicionar tokens");
+      return;
+    }
+
     if (droppedImagesRef.current && userId) {
       setIsLoading(true);
-      // Keep track of tokens so we can add them to the map
       let tokens = [];
       for (let file of droppedImagesRef.current) {
         const { token, assets } = await createTokenFromFile(file, userId);

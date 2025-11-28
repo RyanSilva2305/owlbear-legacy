@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Flex, Box, Label, Input, Checkbox } from "theme-ui";
-
+import { Flex, Box, Label, Input, Checkbox, Text } from "theme-ui";
+//components/map/MapSettings.tsx
 import { isEmpty } from "../../helpers/shared";
 import { getGridUpdatedInset } from "../../helpers/grid";
 
 import { useDataURL } from "../../contexts/AssetsContext";
+import { usePermissoes } from "../../contexts/PermissoesContext";
 import { mapSources as defaultMapSources } from "../../maps";
 
 import Divider from "../Divider";
@@ -59,10 +60,16 @@ function MapSettings({
   onSettingsChange,
   onStateSettingsChange,
 }: MapSettingsProps) {
+  const { canEditGrid, loading } = usePermissoes();
+
   function handleFlagChange(
     event: React.ChangeEvent<HTMLInputElement>,
     flag: EditFlag
   ) {
+    if (!canEditGrid()) {
+      console.warn("⚠️ Sem permissão para editar grid");
+      return;
+    }
     if (event.target.checked) {
       onStateSettingsChange({ editFlags: [...mapState.editFlags, flag] });
     } else {
@@ -73,6 +80,10 @@ function MapSettings({
   }
 
   function handleGridSizeXChange(event: React.ChangeEvent<HTMLInputElement>) {
+    if (!canEditGrid()) {
+      console.warn("⚠️ Sem permissão para editar grid");
+      return;
+    }
     const value = parseInt(event.target.value) || 0;
     let grid = {
       ...map.grid,
@@ -86,6 +97,10 @@ function MapSettings({
   }
 
   function handleGridSizeYChange(event: React.ChangeEvent<HTMLInputElement>) {
+    if (!canEditGrid()) {
+      console.warn("⚠️ Sem permissão para editar grid");
+      return;
+    }
     const value = parseInt(event.target.value) || 0;
     let grid = {
       ...map.grid,
@@ -99,6 +114,10 @@ function MapSettings({
   }
 
   function handleGridTypeChange(option: GridTypeSetting | null) {
+    if (!canEditGrid()) {
+      console.warn("⚠️ Sem permissão para editar grid");
+      return;
+    }
     if (!option) {
       return;
     }
@@ -118,6 +137,10 @@ function MapSettings({
   function handleGridMeasurementTypeChange(
     option: GridMeasurementTypeSetting | null
   ) {
+    if (!canEditGrid()) {
+      console.warn("⚠️ Sem permissão para editar grid");
+      return;
+    }
     if (!option) {
       return;
     }
@@ -132,6 +155,10 @@ function MapSettings({
   }
 
   function handleQualityChange(option: QualityTypeSetting | null) {
+    if (!canEditGrid()) {
+      console.warn("⚠️ Sem permissão para editar grid");
+      return;
+    }
     if (!option) {
       return;
     }
@@ -141,6 +168,10 @@ function MapSettings({
   function handleGridMeasurementScaleChange(
     event: React.ChangeEvent<HTMLInputElement>
   ) {
+    if (!canEditGrid()) {
+      console.warn("⚠️ Sem permissão para editar grid");
+      return;
+    }
     const grid = {
       ...map.grid,
       measurement: {
@@ -159,7 +190,7 @@ function MapSettings({
         const response = await fetch(mapURL);
         const blob = await response.blob();
         let size = blob.size;
-        size /= 1000000; // Bytes to Megabytes
+        size /= 1000000;
         setMapSize(parseFloat(size.toFixed(2)));
       } else {
         setMapSize(0);
@@ -170,6 +201,25 @@ function MapSettings({
 
   const mapEmpty = !map || isEmpty(map);
   const mapStateEmpty = !mapState || isEmpty(mapState);
+  const isDisabled = mapEmpty || !canEditGrid();
+
+  if (loading) {
+    return (
+      <Box p={2}>
+        <Text>Carregando permissões...</Text>
+      </Box>
+    );
+  }
+
+  if (!canEditGrid()) {
+    return (
+      <Box p={2}>
+        <Text sx={{ color: "red" }}>
+          Você não tem permissão para editar o grid.
+        </Text>
+      </Box>
+    );
+  }
 
   return (
     <Flex sx={{ flexDirection: "column" }}>
@@ -181,7 +231,7 @@ function MapSettings({
             name="gridX"
             value={`${(map && map.grid.size.x) || 0}`}
             onChange={handleGridSizeXChange}
-            disabled={mapEmpty}
+            disabled={isDisabled}
             min={1}
             my={1}
           />
@@ -193,7 +243,7 @@ function MapSettings({
             name="gridY"
             value={`${(map && map.grid.size.y) || 0}`}
             onChange={handleGridSizeYChange}
-            disabled={mapEmpty}
+            disabled={isDisabled}
             min={1}
             my={1}
           />
@@ -204,8 +254,12 @@ function MapSettings({
         <Input
           name="name"
           value={(map && map.name) || ""}
-          onChange={(e) => onSettingsChange({ name: e.target.value })}
-          disabled={mapEmpty}
+          onChange={(e) => {
+            if (canEditGrid()) {
+              onSettingsChange({ name: e.target.value });
+            }
+          }}
+          disabled={isDisabled}
           my={1}
         />
       </Box>
@@ -218,7 +272,7 @@ function MapSettings({
           <Box sx={{ width: "50%" }}>
             <Label>Grid Type</Label>
             <Select
-              isDisabled={mapEmpty}
+              isDisabled={isDisabled}
               options={gridTypeSettings}
               value={
                 mapEmpty
@@ -233,20 +287,24 @@ function MapSettings({
             <Label>
               <Checkbox
                 checked={!mapEmpty && map.showGrid}
-                disabled={mapEmpty}
-                onChange={(e) =>
-                  onSettingsChange({ showGrid: e.target.checked })
-                }
+                disabled={isDisabled}
+                onChange={(e) => {
+                  if (canEditGrid()) {
+                    onSettingsChange({ showGrid: e.target.checked });
+                  }
+                }}
               />
               Draw Grid
             </Label>
             <Label>
               <Checkbox
                 checked={!mapEmpty && map.snapToGrid}
-                disabled={mapEmpty}
-                onChange={(e) =>
-                  onSettingsChange({ snapToGrid: e.target.checked })
-                }
+                disabled={isDisabled}
+                onChange={(e) => {
+                  if (canEditGrid()) {
+                    onSettingsChange({ snapToGrid: e.target.checked });
+                  }
+                }}
               />
               Snap to Grid
             </Label>
@@ -256,7 +314,7 @@ function MapSettings({
           <Box my={2} sx={{ width: "50%" }}>
             <Label>Grid Measurement</Label>
             <Select
-              isDisabled={mapEmpty}
+              isDisabled={isDisabled}
               options={
                 map && map.grid.type === "square"
                   ? gridSquareMeasurementTypeSettings
@@ -279,7 +337,7 @@ function MapSettings({
               name="gridMeasurementScale"
               value={`${map && map.grid.measurement.scale}`}
               onChange={handleGridMeasurementScaleChange}
-              disabled={mapEmpty}
+              disabled={isDisabled}
               min={1}
               my={1}
               autoComplete="off"
@@ -298,7 +356,7 @@ function MapSettings({
                   ? undefined
                   : qualitySettings.find((s) => s.value === map.quality)
               }
-              isDisabled={mapEmpty}
+              isDisabled={isDisabled}
               onChange={handleQualityChange as any}
               isOptionDisabled={
                 ((option: QualityTypeSetting) =>
@@ -321,7 +379,7 @@ function MapSettings({
           <Label>
             <Checkbox
               checked={!mapStateEmpty && mapState.editFlags.includes("fog")}
-              disabled={mapStateEmpty}
+              disabled={mapStateEmpty || !canEditGrid()}
               onChange={(e) => handleFlagChange(e, "fog")}
             />
             Fog
@@ -329,7 +387,7 @@ function MapSettings({
           <Label>
             <Checkbox
               checked={!mapStateEmpty && mapState.editFlags.includes("drawing")}
-              disabled={mapStateEmpty}
+              disabled={mapStateEmpty || !canEditGrid()}
               onChange={(e) => handleFlagChange(e, "drawing")}
             />
             Drawings
@@ -337,7 +395,7 @@ function MapSettings({
           <Label>
             <Checkbox
               checked={!mapStateEmpty && mapState.editFlags.includes("tokens")}
-              disabled={mapStateEmpty}
+              disabled={mapStateEmpty || !canEditGrid()}
               onChange={(e) => handleFlagChange(e, "tokens")}
             />
             Tokens
@@ -345,7 +403,7 @@ function MapSettings({
           <Label>
             <Checkbox
               checked={!mapStateEmpty && mapState.editFlags.includes("notes")}
-              disabled={mapStateEmpty}
+              disabled={mapStateEmpty || !canEditGrid()}
               onChange={(e) => handleFlagChange(e, "notes")}
             />
             Notes

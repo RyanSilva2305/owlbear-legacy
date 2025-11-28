@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Box } from "theme-ui";
 import { useToasts } from "react-toast-notifications";
-
+//Map.tsx
 import MapControls from "./MapControls";
 import MapInteraction from "./MapInteraction";
 import MapGrid from "./MapGrid";
-
+import { useMestreId } from "../../contexts/MestreContext";
 import DrawingTool from "../tools/DrawingTool";
 import FogTool from "../tools/FogTool";
 import MeasureTool from "../tools/MeasureTool";
@@ -13,6 +13,7 @@ import NetworkedMapPointer from "../../network/NetworkedMapPointer";
 
 import { useSettings } from "../../contexts/SettingsContext";
 import { useUserId } from "../../contexts/UserIdContext";
+import { usePermissoes } from "../../contexts/PermissoesContext";
 
 import Action from "../../actions/Action";
 import {
@@ -96,9 +97,14 @@ function Map({
   const { addToast } = useToasts();
 
   const userId = useUserId();
+  const mestreId = useMestreId();
+  const { canEditGrid } = usePermissoes();
 
   const [selectedToolId, setSelectedToolId] = useState<MapToolId>("move");
   const { settings, setSettings } = useSettings();
+
+  const isMapOwner = map?.owner === mestreId;
+  const hasEditPermission = isMapOwner || canEditGrid();
 
   function handleToolSettingChange(change: Partial<Settings>) {
     setSettings((prevSettings) => ({
@@ -111,32 +117,60 @@ function Map({
   const fogShapes = Object.values(mapState?.fogs || {});
 
   function handleToolAction(action: string) {
+    if (!hasEditPermission) {
+      console.warn("⚠️ Sem permissão para executar ação:", action);
+      return;
+    }
     if (action === "eraseAll") {
       onMapDraw(new RemoveStatesAction(drawShapes.map((s) => s.id)));
     }
   }
 
   function handleMapShapeAdd(shape: Drawing) {
+    if (!hasEditPermission) {
+      console.warn("⚠️ Sem permissão para adicionar desenho");
+      return;
+    }
     onMapDraw(new AddStatesAction([shape]));
   }
 
   function handleMapShapesRemove(shapeIds: string[]) {
+    if (!hasEditPermission) {
+      console.warn("⚠️ Sem permissão para remover desenho");
+      return;
+    }
     onMapDraw(new RemoveStatesAction(shapeIds));
   }
 
   function handleFogShapesAdd(shapes: Fog[]) {
+    if (!hasEditPermission) {
+      console.warn("⚠️ Sem permissão para adicionar fog");
+      return;
+    }
     onFogDraw(new AddStatesAction(shapes));
   }
 
   function handleFogShapesCut(shapes: Fog[]) {
+    if (!hasEditPermission) {
+      console.warn("⚠️ Sem permissão para cortar fog");
+      return;
+    }
     onFogDraw(new CutFogAction(shapes));
   }
 
   function handleFogShapesRemove(shapeIds: string[]) {
+    if (!hasEditPermission) {
+      console.warn("⚠️ Sem permissão para remover fog");
+      return;
+    }
     onFogDraw(new RemoveStatesAction(shapeIds));
   }
 
   function handleFogShapesEdit(shapes: Partial<Fog>[]) {
+    if (!hasEditPermission) {
+      console.warn("⚠️ Sem permissão para editar fog");
+      return;
+    }
     onFogDraw(new EditStatesAction(shapes));
   }
 
@@ -168,6 +202,12 @@ function Map({
       selectedToolId,
       settings.select
     );
+
+  // Determinar se fog é editável
+  const isFogEditable =
+    !!(map?.owner === userId || mapState?.editFlags.includes("fog")) &&
+    !settings.fog.preview &&
+    hasEditPermission;
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -209,7 +249,7 @@ function Map({
           drawings={drawShapes}
           onDrawingAdd={handleMapShapeAdd}
           onDrawingsRemove={handleMapShapesRemove}
-          active={selectedToolId === "drawing"}
+          active={selectedToolId === "drawing" && hasEditPermission}
           toolSettings={settings.drawing}
         />
         {notes}
@@ -222,12 +262,9 @@ function Map({
           onShapesRemove={handleFogShapesRemove}
           onShapesEdit={handleFogShapesEdit}
           onShapeError={addToast}
-          active={selectedToolId === "fog"}
+          active={selectedToolId === "fog" && hasEditPermission}
           toolSettings={settings.fog}
-          editable={
-            !!(map?.owner === userId || mapState?.editFlags.includes("fog")) &&
-            !settings.fog.preview
-          }
+          editable={isFogEditable}
         />
         <NetworkedMapPointer
           active={selectedToolId === "pointer"}

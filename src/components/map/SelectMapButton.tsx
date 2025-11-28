@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { IconButton } from "theme-ui";
-
+//map/SelectMapButton.tsx Estou mandando esse por achar necessario
 import SelectMapModal from "../../modals/SelectMapModal";
 import SelectMapIcon from "../../icons/SelectMapIcon";
 

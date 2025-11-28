@@ -31,6 +31,7 @@ import { useAssets } from "../contexts/AssetsContext";
 import { GroupProvider } from "../contexts/GroupContext";
 import { TileDragProvider } from "../contexts/TileDragContext";
 import { useDatabase } from "../contexts/DatabaseContext";
+import { usePermissoes } from "../contexts/PermissoesContext";
 
 import { Map } from "../types/Map";
 import {
@@ -52,7 +53,6 @@ function SelectMapModal({
   onDone,
   onMapChange,
   onMapReset,
-  // The map currently being view in the map screen
   currentMap,
 }: SelectMapProps) {
   const { addToast } = useToasts();
@@ -60,6 +60,7 @@ function SelectMapModal({
   const { databaseStatus } = useDatabase();
 
   const userId = useUserId();
+  const { canAddToken } = usePermissoes(); // ADICIONADO
   const {
     maps,
     mapStates,
@@ -75,15 +76,10 @@ function SelectMapModal({
   } = useMapData();
   const { addAssets } = useAssets();
 
-  // Get map names for group filtering
   const [mapNames, setMapNames] = useState(getItemNames(maps));
   useEffect(() => {
     setMapNames(getItemNames(maps));
   }, [maps]);
-
-  /**
-   * Image Upload
-   */
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -93,8 +89,13 @@ function SelectMapModal({
   const largeImageWarningFiles = useRef<File[]>();
 
   async function handleImagesUpload(files: File[]) {
+    // BLOQUEIO: Verificar permissão antes de importar
+    if (!canAddToken()) {
+      addToast("❌ Você não tem permissão para importar mapas");
+      return;
+    }
+
     if (navigator.storage) {
-      // Attempt to enable persistant storage
       await navigator.storage.persist();
     }
 
@@ -107,7 +108,6 @@ function SelectMapModal({
       }
     }
 
-    // Any file greater than 20MB
     if (mapFiles.some((file) => file.size > 2e7)) {
       largeImageWarningFiles.current = mapFiles;
       setShowLargeImageWarning(true);
@@ -122,13 +122,17 @@ function SelectMapModal({
   }
 
   function clearFileInput() {
-    // Set file input to null to allow adding the same image 2 times in a row
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   }
 
   function openImageDialog() {
+    // BLOQUEIO: Verificar permissão antes de abrir dialog
+    if (!canAddToken()) {
+      addToast("❌ Você não tem permissão para importar mapas");
+      return;
+    }
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
@@ -162,21 +166,21 @@ function SelectMapModal({
     }
   }
 
-  /**
-   * Modal Controls
-   */
-
   async function handleClose() {
     onDone();
   }
 
-  /**
-   * Map Controls
-   */
   async function handleMapSelect(mapId: string) {
     if (isLoading) {
       return;
     }
+    
+    // BLOQUEIO: Verificar permissão antes de trocar mapa
+    if (!canAddToken()) {
+      addToast("❌ Você não tem permissão para trocar o mapa");
+      return;
+    }
+    
     if (mapId) {
       setIsLoading(true);
       const map = (await getMap(mapId)) || null;
@@ -196,7 +200,6 @@ function SelectMapModal({
   const [canAddDraggedMap, setCanAddDraggedMap] = useState(false);
   function handleGroupsSelect(groupIds: string[]) {
     if (groupIds.length === 1) {
-      // Only allow adding a map from dragging if there is a single group item selected
       const group = findGroup(mapGroups, groupIds[0]);
       setCanAddDraggedMap(group !== undefined && group.type === "item");
     } else {
@@ -269,7 +272,10 @@ function SelectMapModal({
               <Label pt={2} pb={1}>
                 Select or import a map
               </Label>
-              <TileActionBar onAdd={openImageDialog} addTitle="Import Map(s)" />
+              <TileActionBar 
+                onAdd={openImageDialog} 
+                addTitle="Import Map(s)"
+              />
               <Box sx={{ position: "relative" }}>
                 <TileDragProvider
                   onDragAdd={(canAddDraggedMap && handleDragAdd) || undefined}

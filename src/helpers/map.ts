@@ -21,8 +21,8 @@ type Resolution = {
 
 const mapResolutions: Resolution[] = [
   {
-    size: 30, // Pixels per grid
-    quality: 0.5, // JPEG compression quality
+    size: 30,
+    quality: 0.5,
     id: "low",
   },
   { size: 70, quality: 0.6, id: "medium" },
@@ -30,9 +30,6 @@ const mapResolutions: Resolution[] = [
   { size: 300, quality: 0.8, id: "ultra" },
 ];
 
-/**
- * Get the asset id of the preview file to send for a map
- */
 export function getMapPreviewAsset(map: Map): string | undefined {
   if (map.type === "file") {
     const res = map.resolutions;
@@ -65,20 +62,15 @@ export async function createMapFromFile(
   let image = new Image();
 
   const buffer = await blobToBuffer(file);
-  // Copy file to avoid permissions issues
   const blob = new Blob([buffer]);
-  // Create and load the image temporarily to get its dimensions
   const url = URL.createObjectURL(blob);
 
   return new Promise((resolve, reject) => {
     image.onload = async function () {
-      // Find name and grid size
       let gridSize;
       let name = "Unknown Map";
       if (file.name) {
         if (file.name.matchAll) {
-          // Match against a regex to find the grid size in the file name
-          // e.g. Cave 22x23 will return [["22x22", "22", "x", "23"]]
           const gridMatches = [...file.name.matchAll(/(\d+) ?(x|X) ?(\d+)/g)];
           for (let match of gridMatches) {
             const matchX = parseInt(match[1]);
@@ -97,14 +89,10 @@ export async function createMapFromFile(
           gridSize = await getGridSizeFromImage(image);
         }
 
-        // Remove file extension
         name = file.name.replace(/\.[^/.]+$/, "");
-        // Removed grid size expression
         name = name.replace(/(\[ ?|\( ?)?\d+ ?(x|X) ?\d+( ?\]| ?\))?/, "");
-        // Clean string
         name = name.replace(/ +/g, " ");
         name = name.trim();
-        // Capitalize and remove underscores
         name = Case.capital(name);
       }
 
@@ -112,9 +100,12 @@ export async function createMapFromFile(
         gridSize = { x: 22, y: 22 };
       }
 
+      // CRÍTICO: Usar mestre_id como owner, não userId
+      const mestreId = localStorage.getItem('owlbear_mestre_id') || userId;
+      console.log("🗺️ Criando mapa com owner:", mestreId, "(criador:", userId, ")");
+
       let assets: Asset[] = [];
 
-      // Create resolutions
       const resolutions: FileMapResolutions = {};
       for (let resolution of mapResolutions) {
         const resolutionPixelSize = Vector2.multiply(gridSize, resolution.size);
@@ -134,17 +125,17 @@ export async function createMapFromFile(
             const asset = {
               ...resized,
               id: assetId,
-              owner: userId,
+              owner: mestreId, // ALTERADO
             };
             assets.push(asset);
           }
         }
       }
-      // Create thumbnail
+
       const thumbnailImage = await createThumbnail(image, file.type);
       const thumbnailId = uuid();
       if (thumbnailImage) {
-        const thumbnail = { ...thumbnailImage, id: thumbnailId, owner: userId };
+        const thumbnail = { ...thumbnailImage, id: thumbnailId, owner: mestreId }; // ALTERADO
         assets.push(thumbnail);
       }
 
@@ -154,7 +145,7 @@ export async function createMapFromFile(
         width: image.width,
         height: image.height,
         mime: file.type,
-        owner: userId,
+        owner: mestreId, // ALTERADO
       };
       assets.push(fileAsset);
 
@@ -182,7 +173,7 @@ export async function createMapFromFile(
         id: uuid(),
         created: Date.now(),
         lastModified: Date.now(),
-        owner: userId,
+        owner: mestreId, // ALTERADO: sempre o mestre
         showGrid: false,
         snapToGrid: true,
         quality: "original",

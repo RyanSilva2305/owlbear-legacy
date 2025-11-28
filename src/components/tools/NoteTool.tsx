@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import shortid from "shortid";
 import { Group } from "react-konva";
 import Konva from "konva";
-
+//NoteTool.tsx
 import {
   useInteractionEmitter,
   MapDragEvent,

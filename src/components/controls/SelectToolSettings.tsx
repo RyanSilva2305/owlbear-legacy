@@ -4,7 +4,7 @@ import {
   SelectToolSettings as SelectToolSettingsType,
   SelectToolType,
 } from "../../types/Select";
-
+//SelectToolSetting.tsx
 import { useKeyboard } from "../../contexts/KeyboardContext";
 
 import ToolSection from "./shared/ToolSection";

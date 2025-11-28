@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { Box, Flex, Grid } from "theme-ui";
+import { Box, Flex, Grid, Text } from "theme-ui";
 import SimpleBar from "simplebar-react";
 import {
   DragOverlay,
@@ -24,6 +24,7 @@ import usePreventSelect from "../../hooks/usePreventSelect";
 import { useTokenData } from "../../contexts/TokenDataContext";
 import { useUserId } from "../../contexts/UserIdContext";
 import { useMapStage } from "../../contexts/MapStageContext";
+import { usePermissoes } from "../../contexts/PermissoesContext";
 import DragContext, { CustomDragEndEvent } from "../../contexts/DragContext";
 
 import {
@@ -43,6 +44,7 @@ function TokenBar({ onMapTokensStateCreate }: TokenBarProps) {
   const userId = useUserId();
   const { tokensById, tokenGroups } = useTokenData();
   const [fullScreen] = useSetting<boolean>("map.fullScreen");
+  const { canAddToken, loading } = usePermissoes();
 
   const [dragId, setDragId] = useState<string | null>(null);
 
@@ -60,6 +62,10 @@ function TokenBar({ onMapTokensStateCreate }: TokenBarProps) {
   const [preventSelect, resumeSelect] = usePreventSelect();
 
   function handleDragStart({ active }: DragStartEvent) {
+    if (!canAddToken()) {
+      console.warn("⚠️ Sem permissão para adicionar tokens");
+      return;
+    }
     setDragId(active.id);
     preventSelect();
   }
@@ -70,9 +76,16 @@ function TokenBar({ onMapTokensStateCreate }: TokenBarProps) {
   }: CustomDragEndEvent) {
     setDragId(null);
     resumeSelect();
+    
+    if (!canAddToken()) {
+      console.warn("⚠️ Sem permissão para adicionar tokens");
+      return;
+    }
+
     if (!userId) {
       return;
     }
+    
     const mapStage = mapStageRef.current;
     if (mapStage && overlayNodeClientRect) {
       const dragRect = overlayNodeClientRect;
@@ -120,7 +133,7 @@ function TokenBar({ onMapTokensStateCreate }: TokenBarProps) {
     if (group.type === "item") {
       const token = tokensById[group.id];
       if (token && !token.hideInSidebar) {
-        if (draggable) {
+        if (draggable && canAddToken()) {
           return (
             <Draggable id={token.id} key={token.id}>
               <TokenBarToken token={token} />
@@ -144,7 +157,7 @@ function TokenBar({ onMapTokensStateCreate }: TokenBarProps) {
             group={group}
             tokens={groupTokens}
             key={group.id}
-            draggable={draggable}
+            draggable={draggable && canAddToken()}
           />
         );
       }
@@ -152,6 +165,43 @@ function TokenBar({ onMapTokensStateCreate }: TokenBarProps) {
   }
 
   const dragGroup = dragId && findGroup(tokenGroups, dragId);
+
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          height: "100%",
+          width: "80px",
+          minWidth: "80px",
+          display: fullScreen ? "none" : "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Text>...</Text>
+      </Box>
+    );
+  }
+
+  if (!canAddToken()) {
+    return (
+      <Box
+        sx={{
+          height: "100%",
+          width: "80px",
+          minWidth: "80px",
+          display: fullScreen ? "none" : "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          opacity: 0.5,
+        }}
+      >
+        <Text sx={{ fontSize: "10px", textAlign: "center", padding: "10px" }}>
+          Sem permissão para adicionar tokens
+        </Text>
+      </Box>
+    );
+  }
 
   return (
     <DragContext
@@ -182,7 +232,6 @@ function TokenBar({ onMapTokensStateCreate }: TokenBarProps) {
             columns="1fr"
             gap={2}
             py={2}
-            // Prevent selection on 3D touch for iOS
             onTouchStart={preventSelect}
             onTouchEnd={resumeSelect}
           >

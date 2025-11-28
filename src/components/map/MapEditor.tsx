@@ -3,7 +3,7 @@ import { Box, IconButton } from "theme-ui";
 import { Stage, Layer, Image } from "react-konva";
 import Konva from "konva";
 import ReactResizeDetector from "react-resize-detector";
-
+//MapEditor.tsx
 import useMapImage from "../../hooks/useMapImage";
 import usePreventOverscroll from "../../hooks/usePreventOverscroll";
 import useStageInteraction from "../../hooks/useStageInteraction";

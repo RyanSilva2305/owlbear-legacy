@@ -1,73 +1,71 @@
-// Arquivo: owlbear-rodeo-legacy/src/routes/LaravelGame.tsx
-
 import { useEffect } from "react";
-import { useHistory, useLocation } from "react-router-dom";
+import { useHistory, useLocation, useParams } from "react-router-dom";
 import LoadingOverlay from "../components/LoadingOverlay";
-import { api } from "../api/client";
 
-/**
- * Componente que automaticamente inicializa o jogo
- * quando carregado via Laravel
- */
 function LaravelGame() {
   const history = useHistory();
   const location = useLocation();
+  const { sessaoId } = useParams<{ sessaoId: string }>();
 
   useEffect(() => {
     async function autoStart() {
       try {
-        // Tenta ler da query string primeiro
         const params = new URLSearchParams(location.search);
-        let sessionId = params.get('sessionId');
-        let userId = params.get('userId');
-        let role = params.get('role');
-
-        // Fallback para window.OWLBEAR_CONFIG
-        if (!sessionId) {
-          const config = (window as any).OWLBEAR_CONFIG;
-          if (config) {
-            sessionId = config.sessionId;
-            userId = config.userId;
-            role = config.role;
-          }
-        }
+        const userId = params.get('userId') || localStorage.getItem('owlbear_user_id');
+        const userName = params.get('userName') || localStorage.getItem('owlbear_user_name');
         
-        if (!sessionId) {
-          console.error("sessionId não encontrado, redirecionando para home");
+        if (!sessaoId) {
+          console.error("❌ sessaoId não encontrado");
           history.push("/");
           return;
         }
 
-        console.log("Iniciando sessão automática:", { sessionId, userId, role });
-
-        // Busca ou cria o game no Laravel
-        const session = await api.getSession(sessionId);
+        // BUSCAR mestre_id da sessão via API
+        const apiBase = (window as any).OWLBEAR_CONFIG?.apiBase || '/api';
         
-        console.log("Sessão criada/encontrada:", session);
-
-        // Salva os dados no localStorage para uso posterior
-        if (userId) {
-          localStorage.setItem('owlbear_user_id', userId);
+        const mestreResponse = await fetch(`${apiBase}/sessoes/${sessaoId}/mestre`, {
+          credentials: 'include'
+        });
+        
+        let mestreId: string = userId || ''; // Fallback com tipo
+        if (mestreResponse.ok) {
+          const mestreData = await mestreResponse.json();
+          mestreId = mestreData.mestre_id || userId || '';
+          console.log("🎭 Mestre da sessão:", mestreId);
         }
-        if (role) {
-          localStorage.setItem('owlbear_role', role);
+
+        console.log("✅ Iniciando sessão:", { sessaoId, userId, mestreId });
+
+        // Salvar no localStorage
+        localStorage.setItem('owlbear_session_id', sessaoId);
+        if (userId) localStorage.setItem('owlbear_user_id', userId);
+        if (userName) localStorage.setItem('owlbear_user_name', userName);
+        if (mestreId) localStorage.setItem('owlbear_mestre_id', mestreId); // Só salva se tiver valor
+
+        // Buscar/criar o game
+        const response = await fetch(`${apiBase}/owlbear/session?sessionId=${sessaoId}`, {
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          throw new Error('Erro ao buscar sessão');
         }
 
-        // Redireciona para a rota do jogo com o UUID real
+        const session = await response.json();
+        console.log("✅ Game ID:", session.id);
+
+        // Redireciona para a rota do jogo
         history.push(`/game/${session.id}`);
         
       } catch (error) {
-        console.error("Erro ao iniciar sessão:", error);
-        // Em caso de erro, mostra na tela por 3 segundos antes de voltar
+        console.error("❌ Erro ao iniciar sessão:", error);
         alert(`Erro ao conectar: ${error}`);
-        setTimeout(() => {
-          history.push("/");
-        }, 3000);
+        setTimeout(() => history.push("/"), 3000);
       }
     }
 
     autoStart();
-  }, [history, location]);
+  }, [history, location, sessaoId]);
 
   return <LoadingOverlay />;
 }

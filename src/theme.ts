@@ -1,10 +1,11 @@
+//theme.ts
 const theme = {
   config: {
     useColorSchemeMediaQuery: false,
   },
   colors: {
     text: "hsl(210, 50%, 96%)",
-    background: "hsl(230, 25%, 18%)",
+    background: "rgb(2, 32, 13)", // Verde
     primary: "hsl(260, 100%, 80%)",
     secondary: "hsl(290, 100%, 80%)",
     highlight: "hsl(260, 20%, 40%)",
@@ -16,7 +17,7 @@ const theme = {
     modes: {
       light: {
         text: "hsl(10, 20%, 20%)",
-        background: "hsl(10, 10%, 98%)",
+        background: "#023b17ff", // Verde
         primary: "hsl(260, 100%, 80%)",
         secondary: "hsl(290, 100%, 80%)",
         highlight: "hsl(260, 20%, 70%)",

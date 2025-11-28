@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import useImage from "use-image";
-
+//MapGrid.tsx
 import { useDataURL } from "../../contexts/AssetsContext";
 
 import { mapSources as defaultMapSources } from "../../maps";

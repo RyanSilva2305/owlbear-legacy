@@ -1,4 +1,4 @@
-// Arquivo: owlbear-rodeo-legacy/src/database.ts
+// Arquivo: owlbear-legacy/src/database.ts
 
 import Dexie, { DexieOptions } from "dexie";
 import { v4 as uuid } from "uuid";

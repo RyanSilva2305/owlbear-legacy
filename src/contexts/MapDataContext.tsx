@@ -6,7 +6,7 @@ import React, {
   useMemo,
 } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-
+//MapDataContext.tsx
 import { useDatabase } from "./DatabaseContext";
 
 import { Map } from "../types/Map";

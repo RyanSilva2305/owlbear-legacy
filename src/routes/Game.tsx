@@ -1,10 +1,9 @@
-// Arquivo: owlbear-rodeo-legacy/src/routes/Game.tsx
-
 import { useState, useEffect, useRef } from "react";
 import { Flex, Box, Text } from "theme-ui";
 import { useParams } from "react-router-dom";
 import Konva from "konva";
-
+import { MestreProvider } from "../contexts/MestreContext";
+import { useSessionStatus } from "../hooks/useSessionStatus";
 import Banner from "../components/banner/Banner";
 import ReconnectBanner from "../components/banner/ReconnectBanner";
 import OfflineBanner from "../components/banner/OfflineBanner";
@@ -27,6 +26,7 @@ import { AssetsProvider, AssetURLsProvider } from "../contexts/AssetsContext";
 import { MapDataProvider } from "../contexts/MapDataContext";
 import { TokenDataProvider } from "../contexts/TokenDataContext";
 import { MapLoadingProvider } from "../contexts/MapLoadingContext";
+import { PermissoesProvider } from "../contexts/PermissoesContext";
 
 import NetworkedMapAndTokens from "../network/NetworkedMapAndTokens";
 import NetworkedParty from "../network/NetworkedParty";
@@ -45,7 +45,40 @@ function Game() {
     process.env.REACT_APP_MAINTENANCE === "true"
   );
 
-  // ========== SOBRESCREVER NICKNAME DO LARAVEL ==========
+  const [sessionId, setSessionId] = useState<string>('');
+  const [userId, setUserId] = useState<string>('');
+  const [salaId, setSalaId] = useState<string>('');
+
+  useEffect(() => {
+    const storedSessionId = localStorage.getItem('owlbear_session_id') || gameId;
+    const storedUserId = localStorage.getItem('owlbear_user_id') || '';
+    setSessionId(storedSessionId);
+    setUserId(storedUserId);
+  }, [gameId]);
+
+  useEffect(() => {
+    async function fetchSalaId() {
+      try {
+        const apiBase = (window as any).OWLBEAR_CONFIG?.apiBase || '/api';
+        const response = await fetch(`${apiBase}/sessoes/${sessionId}/mestre`, {
+          credentials: 'include'
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setSalaId(data.sala_id);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar sala_id:', error);
+      }
+    }
+    
+    if (sessionId) {
+      fetchSalaId();
+    }
+  }, [sessionId]);
+
+  useSessionStatus(sessionId, userId, salaId);
+
   useEffect(() => {
     async function overrideNickname() {
       if (database && databaseStatus === "loaded") {
@@ -70,9 +103,7 @@ function Game() {
 
     overrideNickname();
   }, [database, databaseStatus]);
-  // ====================================================
 
-  // Handle session errors
   const [peerError, setPeerError] = useState<string | null>(null);
   useEffect(() => {
     function handlePeerError({ error }: PeerErrorEvent) {
@@ -113,7 +144,6 @@ function Game() {
     };
   }, [session]);
 
-  // Join game
   useEffect(() => {
     if (
       sessionStatus === "ready" &&
@@ -140,72 +170,74 @@ function Game() {
     };
   }, [session]);
 
-  // A ref to the Konva stage
-  // the ref will be assigned in the MapInteraction component
   const mapStageRef = useRef<Konva.Stage | null>(null);
 
   return (
-    <AssetsProvider>
-      <AssetURLsProvider>
-        <MapLoadingProvider>
-          <MapDataProvider>
-            <TokenDataProvider>
-              <PlayerProvider session={session}>
-                <PartyProvider session={session}>
-                  <MapStageProvider value={mapStageRef}>
-                    <Flex
-                      sx={{
-                        justifyContent: "space-between",
-                        flexGrow: 1,
-                        height: "100%",
-                      }}
-                    >
-                      <NetworkedParty session={session} gameId={gameId} />
-                      <NetworkedMapAndTokens session={session} />
-                    </Flex>
-                    <Banner
-                      isOpen={!!peerError}
-                      onRequestClose={() => setPeerError(null)}
-                    >
-                      <Box p={1}>
-                        <Text as="p" variant="body2">
-                          {peerError} See <Link to="/faq#connection">FAQ</Link>{" "}
-                          for more information.
-                        </Text>
-                      </Box>
-                    </Banner>
-                    <OfflineBanner isOpen={sessionStatus === "offline"} />
-                    <ReconnectBanner
-                      isOpen={sessionStatus === "reconnecting"}
-                    />
-                    <AuthModal
-                      isOpen={sessionStatus === "auth"}
-                      onSubmit={handleAuthSubmit}
-                    />
-                    <GameExpiredModal
-                      isOpen={gameExpired}
-                      onRequestClose={() => setGameExpired(false)}
-                    />
-                    <ForceUpdateModal
-                      isOpen={sessionStatus === "needs_update"}
-                    />
-                    {!sessionStatus && <LoadingOverlay />}
-                    {sessionStatus && databaseStatus === "upgrading" && (
-                      <UpgradingLoadingOverlay />
-                    )}
-                    <MaintenanceModal
-                      isOpen={maintenance}
-                      onRequestClose={() => setMaintenance(false)}
-                    />
-                    <MapLoadingOverlay />
-                  </MapStageProvider>
-                </PartyProvider>
-              </PlayerProvider>
-            </TokenDataProvider>
-          </MapDataProvider>
-        </MapLoadingProvider>
-      </AssetURLsProvider>
-    </AssetsProvider>
+    <PermissoesProvider sessionId={sessionId} userId={userId}>
+      <MestreProvider>
+      <AssetsProvider>
+        <AssetURLsProvider>
+          <MapLoadingProvider>
+            <MapDataProvider>
+              <TokenDataProvider>
+                <PlayerProvider session={session}>
+                  <PartyProvider session={session}>
+                    <MapStageProvider value={mapStageRef}>
+                      <Flex
+                        sx={{
+                          justifyContent: "space-between",
+                          flexGrow: 1,
+                          height: "100%",
+                        }}
+                      >
+                        <NetworkedParty session={session} gameId={gameId} />
+                        <NetworkedMapAndTokens session={session} />
+                      </Flex>
+                      <Banner
+                        isOpen={!!peerError}
+                        onRequestClose={() => setPeerError(null)}
+                      >
+                        <Box p={1}>
+                          <Text as="p" variant="body2">
+                            {peerError} See <Link to="/faq#connection">FAQ</Link>{" "}
+                            for more information.
+                          </Text>
+                        </Box>
+                      </Banner>
+                      <OfflineBanner isOpen={sessionStatus === "offline"} />
+                      <ReconnectBanner
+                        isOpen={sessionStatus === "reconnecting"}
+                      />
+                      <AuthModal
+                        isOpen={sessionStatus === "auth"}
+                        onSubmit={handleAuthSubmit}
+                      />
+                      <GameExpiredModal
+                        isOpen={gameExpired}
+                        onRequestClose={() => setGameExpired(false)}
+                      />
+                      <ForceUpdateModal
+                        isOpen={sessionStatus === "needs_update"}
+                      />
+                      {!sessionStatus && <LoadingOverlay />}
+                      {sessionStatus && databaseStatus === "upgrading" && (
+                        <UpgradingLoadingOverlay />
+                      )}
+                      <MaintenanceModal
+                        isOpen={maintenance}
+                        onRequestClose={() => setMaintenance(false)}
+                      />
+                      <MapLoadingOverlay />
+                    </MapStageProvider>
+                  </PartyProvider>
+                </PlayerProvider>
+              </TokenDataProvider>
+            </MapDataProvider>
+          </MapLoadingProvider>
+        </AssetURLsProvider>
+      </AssetsProvider>
+      </MestreProvider>
+    </PermissoesProvider>
   );
 }
 

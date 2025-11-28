@@ -1,6 +1,6 @@
 import React from "react";
 import { Grid } from "./Grid";
-
+//types/Map.ts
 export type MapToolId =
   | "map"
   | "move"

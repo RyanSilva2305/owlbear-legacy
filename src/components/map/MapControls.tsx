@@ -36,9 +36,10 @@ import {
 import { Settings } from "../../types/Settings";
 
 import { useKeyboard } from "../../contexts/KeyboardContext";
+import { useUserId } from "../../contexts/UserIdContext";
+import { usePermissoes } from "../../contexts/PermissoesContext";
 
 import shortcuts from "../../shortcuts";
-import { useUserId } from "../../contexts/UserIdContext";
 import { isEmpty } from "../../helpers/shared";
 import { MapActions } from "../../hooks/useMapActions";
 
@@ -58,7 +59,7 @@ type MapControlsProps = {
   onRedo: () => void;
 };
 
-function MapContols({
+function MapControls({
   onMapChange,
   onMapReset,
   map,
@@ -77,9 +78,12 @@ function MapContols({
   const [fullScreen, setFullScreen] = useSetting("map.fullScreen");
 
   const userId = useUserId();
+  const { canEditGrid } = usePermissoes();
 
   const disabledControls = useMemo(() => {
     const isOwner = map && map.owner === userId;
+    const hasEditPermission = isOwner || canEditGrid();
+    
     const allowMapDrawing = isOwner || mapState?.editFlags.includes("drawing");
     const allowFogDrawing = isOwner || mapState?.editFlags.includes("fog");
     const allowNoteEditing = isOwner || mapState?.editFlags.includes("notes");
@@ -94,13 +98,16 @@ function MapContols({
       disabled.push("pointer");
       disabled.push("select");
     }
-    if (!map || !allowMapDrawing) {
+    // BLOQUEIO DE PERMISSÕES: Drawing requer permissão
+    if (!map || !allowMapDrawing || !hasEditPermission) {
       disabled.push("drawing");
     }
-    if (!map || !allowFogDrawing) {
+    // BLOQUEIO DE PERMISSÕES: Fog requer permissão
+    if (!map || !allowFogDrawing || !hasEditPermission) {
       disabled.push("fog");
     }
-    if (!map || !allowNoteEditing) {
+    // BLOQUEIO DE PERMISSÕES: Note requer permissão
+    if (!map || !allowNoteEditing || !hasEditPermission) {
       disabled.push("note");
     }
     if (!map || mapActions.actionIndex < 0) {
@@ -110,7 +117,7 @@ function MapContols({
       disabled.push("redo");
     }
     return disabled;
-  }, [map, mapState, mapActions, allowMapChange, userId]);
+  }, [map, mapState, mapActions, allowMapChange, userId, canEditGrid]);
 
   // Change back to move tool if selected tool becomes disabled
   useEffect(() => {
@@ -387,4 +394,4 @@ function MapContols({
   );
 }
 
-export default MapContols;
+export default MapControls;
