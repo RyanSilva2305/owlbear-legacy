@@ -11,7 +11,7 @@ import LoadingOverlay from "../components/LoadingOverlay";
 import Link from "../components/Link";
 import MapLoadingOverlay from "../components/map/MapLoadingOverlay";
 import UpgradingLoadingOverlay from "../components/UpgradingLoadingOverlay";
-
+//Game.tsx
 import AuthModal from "../modals/AuthModal";
 import GameExpiredModal from "../modals/GameExpiredModal";
 import ForceUpdateModal from "../modals/ForceUpdateModal";

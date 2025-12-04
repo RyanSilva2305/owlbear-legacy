@@ -2,9 +2,7 @@ import { useEffect } from "react";
 import { Flex, Box, Text } from "theme-ui";
 import SimpleBar from "simplebar-react";
 //party/Party.tsx (não tem nenhum outro party aq)
-import AddPartyMemberButton from "./AddPartyMemberButton";
 import Nickname from "./Nickname";
-import ChangeNicknameButton from "./ChangeNicknameButton";
 import StartStreamButton from "./StartStreamButton";
 import SettingsButton from "../SettingsButton";
 import StartTimerButton from "./StartTimerButton";
@@ -31,7 +29,6 @@ type PartyProps = {
 };
 
 function Party({
-  gameId,
   stream,
   partyStreams,
   onStreamStart,
@@ -82,10 +79,6 @@ function Party({
       cancelAnimationFrame(request);
     };
   }, [playerState.timer, setPlayerState]);
-
-  function handleNicknameChange(newNickname: string) {
-    setPlayerState((prevState) => ({ ...prevState, nickname: newNickname }));
-  }
 
   function handleDiceRollsChange(newDiceRolls: DiceRoll[]) {
     setPlayerState(
@@ -167,11 +160,6 @@ function Party({
             ))}
         </SimpleBar>
         <Flex sx={{ flexDirection: "column" }}>
-          <ChangeNicknameButton
-            nickname={playerState.nickname}
-            onChange={handleNicknameChange}
-          />
-          <AddPartyMemberButton gameId={gameId} />
           <StartStreamButton
             onStreamStart={onStreamStart}
             onStreamEnd={onStreamEnd}
