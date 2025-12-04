@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
-//PermissoesContext.tsx
+
 interface Permissoes {
   pode_criar_conteudo: boolean;
   pode_editar_grid: boolean;

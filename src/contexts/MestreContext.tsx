@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from "react";
-//MestreContext.tsx
+
 const MestreContext = React.createContext<string>("");
 
 export function MestreProvider({ children }: { children: React.ReactNode }) {
