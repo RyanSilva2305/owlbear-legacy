@@ -7,6 +7,7 @@ function SettingsButton() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMestre, setIsMestre] = useState(false);
   const [salaId, setSalaId] = useState<string>("");
+  const [statusSessao, setStatusSessao] = useState<string>("");
   
   const userId = localStorage.getItem('owlbear_user_id') || '';
   const sessionId = localStorage.getItem('owlbear_session_id') || '';
@@ -15,7 +16,7 @@ function SettingsButton() {
     async function checkMestre() {
       try {
         const apiBase = (window as any).OWLBEAR_CONFIG?.apiBase || '/api';
-        const response = await fetch(`${apiBase}/sessoes/${sessionId}/mestre`, {
+        const response = await fetch(`${apiBase}/sessoes/${sessionId}/status`, {
           credentials: 'include'
         });
         
@@ -25,9 +26,8 @@ function SettingsButton() {
           const currentUserId = String(userId);
           
           setSalaId(data.sala_id);
+          setStatusSessao(data.status);
           setIsMestre(criadorId === currentUserId);
-          
-          console.log('🔍 Check mestre:', { criadorId, currentUserId, isMestre: criadorId === currentUserId });
         }
       } catch (error) {
         console.error('Erro ao verificar mestre:', error);
@@ -37,6 +37,8 @@ function SettingsButton() {
 
     if (sessionId && userId) {
       checkMestre();
+      const interval = setInterval(checkMestre, 2000);
+      return () => clearInterval(interval);
     }
   }, [sessionId, userId]);
 
@@ -50,10 +52,8 @@ function SettingsButton() {
 
   function voltarParaSala() {
     if (salaId) {
-      console.log('🚪 Redirecionando para /salas/' + salaId);
       window.location.href = `/salas/${salaId}`;
     } else {
-      console.log('🚪 Redirecionando para /salas');
       window.location.href = '/salas';
     }
   }
@@ -63,38 +63,44 @@ function SettingsButton() {
     voltarParaSala();
   }
 
-  async function handlePausar() {
+  async function handlePausarOuIniciar() {
     setIsModalOpen(false);
     try {
       const apiBase = (window as any).OWLBEAR_CONFIG?.apiBase || '/api';
-      console.log('⏸️ Pausando sessão:', sessionId);
-      const response = await fetch(`${apiBase}/sessoes/${sessionId}/pausar`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      console.log('⏸️ Resposta pausar:', response.ok);
+      
+      if (statusSessao === 'pausada') {
+        console.log('▶️ Iniciando sessão:', sessionId);
+        await fetch(`${apiBase}/sessoes/${sessionId}/iniciar`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        setStatusSessao('ativa');
+      } else {
+        console.log('⏸️ Pausando sessão:', sessionId);
+        await fetch(`${apiBase}/sessoes/${sessionId}/pausar`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
     } catch (error) {
-      console.error('Erro ao pausar:', error);
+      console.error('Erro ao pausar/iniciar:', error);
     }
-    // Mestre NÃO sai ao pausar
   }
 
   async function handleFinalizar() {
     setIsModalOpen(false);
     try {
       const apiBase = (window as any).OWLBEAR_CONFIG?.apiBase || '/api';
-      console.log('🔴 Finalizando sessão:', sessionId);
-      const response = await fetch(`${apiBase}/sessoes/${sessionId}/finalizar`, {
+      await fetch(`${apiBase}/sessoes/${sessionId}/finalizar`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' }
       });
-      console.log('🔴 Resposta finalizar:', response.ok);
     } catch (error) {
       console.error('Erro ao finalizar:', error);
     }
-    // Aguarda o hook detectar e redirecionar
     setTimeout(() => voltarParaSala(), 1000);
   }
 
@@ -113,8 +119,9 @@ function SettingsButton() {
           isOpen={isModalOpen}
           onRequestClose={() => setIsModalOpen(false)}
           onSair={handleSair}
-          onPausar={handlePausar}
+          onPausarOuIniciar={handlePausarOuIniciar}
           onFinalizar={handleFinalizar}
+          isPausada={statusSessao === 'pausada'}
         />
       )}
     </>

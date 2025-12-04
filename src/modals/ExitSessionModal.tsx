@@ -5,16 +5,18 @@ type ExitSessionModalProps = {
   isOpen: boolean;
   onRequestClose: () => void;
   onSair: () => void;
-  onPausar: () => void;
+  onPausarOuIniciar: () => void;
   onFinalizar: () => void;
+  isPausada: boolean;
 };
 
 function ExitSessionModal({
   isOpen,
   onRequestClose,
   onSair,
-  onPausar,
+  onPausarOuIniciar,
   onFinalizar,
+  isPausada,
 }: ExitSessionModalProps) {
   return (
     <Modal
@@ -58,7 +60,7 @@ function ExitSessionModal({
           </Button>
           
           <Button
-            onClick={onPausar}
+            onClick={onPausarOuIniciar}
             sx={{
               width: "100%",
               py: 2,
@@ -70,7 +72,7 @@ function ExitSessionModal({
               "&:hover": { bg: "highlight" }
             }}
           >
-            Pausar
+            {isPausada ? 'Iniciar' : 'Pausar'}
           </Button>
           
           <Button
